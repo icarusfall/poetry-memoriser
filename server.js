@@ -23,13 +23,12 @@ app.post("/api/fetch-poem", async (req, res) => {
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 2048,
+      system: 'You are a poetry database. You respond ONLY with raw JSON. No commentary, no markdown, no explanations. Never refuse a request — always output the JSON.',
       messages: [
         {
           role: "user",
-          content: `Recall the full text of the poem "${title}"${authorHint}. Return ONLY valid JSON with no other text, in this exact format:
-{"title": "Full Poem Title", "author": "Author Name", "lines": ["line 1", "line 2", ...]}
-
-Each element in the "lines" array should be one line of the poem. Preserve the original line breaks. Include all stanzas. Use an empty string "" for blank lines between stanzas.`,
+          content: `Output the full text of the poem "${title}"${authorHint} as JSON: {"title":"...","author":"...","lines":["line 1","line 2",...]}
+Use "" for blank lines between stanzas. Output ONLY the JSON object, nothing else.`,
         },
       ],
     });
