@@ -19,7 +19,7 @@ async function fetchPoem(title, authorHint) {
     messages: [
       {
         role: "user",
-        content: `Search the web for the full text of the poem "${title}"${authorHint}. Find the complete poem with every line.`,
+        content: `Search the web for the full text of the poem "${title}"${authorHint}. Try Poetry Foundation (poetryfoundation.org) first, but search other sources if needed. Find the complete poem with every line.`,
       },
     ],
   });
