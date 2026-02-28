@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poetry Memoriser</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Home View -->
+    <div id="home-view" class="view">
+      <header>
+        <h1>Poetry Memoriser</h1>
+      </header>
+
+      <div id="add-poem-section">
+        <button id="add-poem-btn" class="btn btn-primary">+ Add Poem</button>
+
+        <form id="add-poem-form" class="hidden">
+          <input type="text" id="poem-title-input" placeholder="Poem title (e.g. Ozymandias)" required>
+          <input type="text" id="poem-author-input" placeholder="Author (optional)">
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="fetch-btn">Fetch Poem</button>
+            <button type="button" class="btn btn-secondary" id="cancel-add-btn">Cancel</button>
+          </div>
+          <div id="fetch-status" class="hidden"></div>
+        </form>
+      </div>
+
+      <div id="poem-list"></div>
+      <p id="empty-state" class="empty-state">No poems yet. Add one to get started!</p>
+    </div>
+
+    <!-- Practice View -->
+    <div id="practice-view" class="view hidden">
+      <header>
+        <button id="back-btn" class="btn btn-back">&larr; Back</button>
+        <h2 id="practice-title"></h2>
+        <p id="practice-author"></p>
+      </header>
+
+      <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+      </div>
+
+      <div id="lines-container"></div>
+
+      <div id="practice-controls">
+        <button id="reveal-btn" class="btn btn-primary btn-large">Reveal Next Line</button>
+      </div>
+
+      <div id="session-result" class="hidden">
+        <h3>Session Complete!</h3>
+        <p id="result-score"></p>
+        <button id="result-back-btn" class="btn btn-primary">Back to Home</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

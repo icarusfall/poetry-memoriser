@@ -1,0 +1,344 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  background: #faf9f6;
+  color: #2d2d2d;
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+#app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 12px 24px;
+  min-height: 48px;
+  transition: background 0.15s;
+}
+
+.btn-primary {
+  background: #4a6fa5;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #3a5a8a;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+.btn-back {
+  background: none;
+  color: #4a6fa5;
+  padding: 8px 0;
+  font-size: 1rem;
+  min-height: auto;
+}
+
+.btn-large {
+  width: 100%;
+  font-size: 1.15rem;
+  padding: 16px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Add Poem Section */
+#add-poem-section {
+  margin-bottom: 24px;
+}
+
+#add-poem-btn {
+  width: 100%;
+}
+
+#add-poem-form {
+  margin-top: 12px;
+}
+
+#add-poem-form input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  min-height: 48px;
+}
+
+#add-poem-form input:focus {
+  outline: none;
+  border-color: #4a6fa5;
+  box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.form-actions .btn {
+  flex: 1;
+}
+
+#fetch-status {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+#fetch-status.loading {
+  background: #e8f0fe;
+  color: #4a6fa5;
+}
+
+#fetch-status.error {
+  background: #fde8e8;
+  color: #c53030;
+}
+
+/* Poem List */
+.empty-state {
+  text-align: center;
+  color: #888;
+  margin-top: 48px;
+  font-style: italic;
+}
+
+.poem-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.poem-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.poem-card-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.poem-card-info p {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.poem-card-score {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #888;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.poem-card-score .score-pct {
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.score-high { color: #2f855a; }
+.score-mid { color: #b7791f; }
+.score-low { color: #c53030; }
+
+.poem-card-delete {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: 8px;
+  min-height: auto;
+  border-radius: 4px;
+}
+
+.poem-card-delete:hover {
+  color: #c53030;
+  background: #fde8e8;
+}
+
+/* Practice View */
+#practice-view header {
+  margin-bottom: 16px;
+}
+
+#practice-title {
+  margin-top: 8px;
+}
+
+#practice-author {
+  color: #666;
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+#progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  background: #4a6fa5;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+#lines-container {
+  margin-bottom: 24px;
+  min-height: 200px;
+}
+
+.line-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.line-text {
+  flex: 1;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+
+.line-text.blank-line {
+  min-height: 1.5em;
+}
+
+.line-buttons {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-yes, .btn-no {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  min-height: 36px;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.btn-yes {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.btn-yes:hover {
+  background: #9ae6b4;
+}
+
+.btn-no {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.btn-no:hover {
+  background: #feb2b2;
+}
+
+.btn-yes.selected, .btn-no.selected {
+  outline: 2px solid #333;
+}
+
+.btn-yes:disabled, .btn-no:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+#practice-controls {
+  position: sticky;
+  bottom: 16px;
+}
+
+#session-result {
+  text-align: center;
+  padding: 32px 16px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  margin-top: 16px;
+}
+
+#session-result h3 {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+#result-score {
+  font-size: 1.2rem;
+  margin-bottom: 24px;
+}

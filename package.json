@@ -1,0 +1,14 @@
+{
+  "name": "poetry-memoriser",
+  "version": "1.0.0",
+  "description": "A mobile-friendly app to help memorise poems",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0"
+  }
+}
