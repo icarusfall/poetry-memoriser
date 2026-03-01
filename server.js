@@ -20,10 +20,15 @@ async function fetchPoemByTitle(title, authorHint) {
     model: "claude-haiku-4-5-20251001",
     max_tokens: 4096,
     tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
+    system: `You are a poetry research assistant. Your job is to find and return the full text of poems.
+
+Important: Many poems are in the public domain. As a rule of thumb, works by authors who died before 1955 are out of copyright. For example, all works by Shakespeare, Keats, Shelley, Tennyson, Dickinson, Whitman, Yeats (d. 1939), Hopkins (d. 1889), Frost (d. 1963, but most works pre-1928), and similar are public domain and can be freely reproduced.
+
+Only flag copyright concerns for poems by authors who died after 1955 or poems first published after 1928.`,
     messages: [
       {
         role: "user",
-        content: `Search the web for the full text of the poem "${title}"${authorHint}. Try Poetry Foundation (poetryfoundation.org) first, but search other sources if needed. Find the complete poem with every line.`,
+        content: `Search the web for the full text of the poem "${title}"${authorHint}. Try Poetry Foundation (poetryfoundation.org) first, but search other sources if needed. Find and return the complete poem with every line.`,
       },
     ],
   });
@@ -124,14 +129,16 @@ async function formatAsPoem(content) {
   const formatResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
-    system:
-      "You extract poems from provided content and output valid JSON only. No commentary, no markdown.",
+    system: `You extract poems from provided content and output valid JSON only. No commentary, no markdown.
+
+Important copyright guidance: Works by authors who died before 1955, or works first published before 1928, are in the public domain and can be freely reproduced. This includes poets like Shakespeare, Keats, Shelley, Tennyson, Dickinson, Whitman, Yeats (d. 1939), Hopkins (d. 1889), and many others. Do not refuse to output public domain poems.`,
     messages: [
       {
         role: "user",
         content: `${content}\n\nIf the full poem text is present, output it as a JSON object: {"title":"...","author":"...","lines":["line 1","line 2",...]}
 Use "" for stanza breaks.
-If you cannot provide the poem (e.g. copyright concerns, poem not found, or the content doesn't contain the full text), output: {"error":"brief reason why"}
+If the poem could not be found, output: {"error":"Could not find this poem. Try pasting an AllPoetry URL instead."}
+If the poem is under copyright (author died after 1955 AND poem published after 1928), output: {"error":"This poem may be under copyright. Try pasting an AllPoetry URL instead."}
 Output ONLY the JSON.`,
       },
       {
