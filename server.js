@@ -14,38 +14,39 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
 
-// Fetch poem by title using web search (works for public domain poems)
+// Fetch poem by title: search for the AllPoetry URL, then scrape it
 async function fetchPoemByTitle(title, authorHint) {
   const searchResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 4096,
-    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
-    system: `You are a poetry research assistant. Your job is to find and return the full text of poems.
-
-Important: Many poems are in the public domain. As a rule of thumb, works by authors who died before 1955 are out of copyright. For example, all works by Shakespeare, Keats, Shelley, Tennyson, Dickinson, Whitman, Yeats (d. 1939), Hopkins (d. 1889), Frost (d. 1963, but most works pre-1928), and similar are public domain and can be freely reproduced.
-
-Only flag copyright concerns for poems by authors who died after 1955 or poems first published after 1928.`,
+    max_tokens: 1024,
+    system:
+      "You are a search assistant. Find the AllPoetry.com URL for a given poem. Output ONLY the URL, nothing else. If you cannot find it, output NOTFOUND.",
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
     messages: [
       {
         role: "user",
-        content: `Search the web for the full text of the poem "${title}"${authorHint}. Try Poetry Foundation (poetryfoundation.org) first, but search other sources if needed. Find and return the complete poem with every line.`,
+        content: `Find the allpoetry.com URL for the poem "${title}"${authorHint}. Output only the URL.`,
       },
     ],
   });
 
-  const searchText = searchResponse.content
+  const responseText = searchResponse.content
     .filter((b) => b.type === "text")
     .map((b) => b.text)
     .join("\n");
 
-  console.log("Search result length:", searchText.length);
-  console.log("Search result preview:", searchText.slice(0, 300));
+  console.log("Search response:", responseText.slice(0, 500));
 
-  if (!searchText.trim()) {
-    throw new Error("Web search returned no text content");
+  // Extract URL from response
+  const urlMatch = responseText.match(/https?:\/\/allpoetry\.com\/poem\/[^\s)"\]]+/);
+  if (!urlMatch) {
+    throw new Error(
+      `Could not find "${title}" on AllPoetry. Try pasting a direct URL instead.`
+    );
   }
 
-  return formatAsPoem(searchText);
+  console.log("Found AllPoetry URL:", urlMatch[0]);
+  return fetchPoemByUrl(urlMatch[0]);
 }
 
 // Fetch poem from a URL by scraping the page directly
@@ -129,9 +130,8 @@ async function formatAsPoem(content) {
   const formatResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
-    system: `You extract poems from provided content and output valid JSON only. No commentary, no markdown.
-
-Important copyright guidance: Works by authors who died before 1955, or works first published before 1928, are in the public domain and can be freely reproduced. This includes poets like Shakespeare, Keats, Shelley, Tennyson, Dickinson, Whitman, Yeats (d. 1939), Hopkins (d. 1889), and many others. Do not refuse to output public domain poems.`,
+    system:
+      "You extract poems from provided content and output valid JSON only. No commentary, no markdown.",
     messages: [
       {
         role: "user",
