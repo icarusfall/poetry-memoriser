@@ -30,6 +30,13 @@ async function fetchPoem(title, authorHint) {
     .map((b) => b.text)
     .join("\n");
 
+  console.log("Search result length:", searchText.length);
+  console.log("Search result preview:", searchText.slice(0, 300));
+
+  if (!searchText.trim()) {
+    throw new Error("Web search returned no text content");
+  }
+
   // Step 2: Format the found poem as JSON
   const formatResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -63,8 +70,10 @@ app.post("/api/fetch-poem", async (req, res) => {
 
   try {
     const poem = await fetchPoem(title, authorHint);
+    console.log("Parsed poem:", JSON.stringify(poem, null, 2));
 
     if (!poem.title || !poem.author || !Array.isArray(poem.lines)) {
+      console.error("Invalid structure. Keys found:", Object.keys(poem));
       throw new Error("Invalid poem structure");
     }
 
