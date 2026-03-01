@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const Anthropic = require("@anthropic-ai/sdk").default;
+const cheerio = require("cheerio");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -9,6 +10,9 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
 
 // Fetch poem by title using web search (works for public domain poems)
 async function fetchPoemByTitle(title, authorHint) {
@@ -39,23 +43,87 @@ async function fetchPoemByTitle(title, authorHint) {
   return formatAsPoem(searchText);
 }
 
-// Fetch poem from a URL (works for any poem, including copyrighted)
+// Fetch poem from a URL by scraping the page directly
 async function fetchPoemByUrl(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    headers: { "User-Agent": BROWSER_UA },
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch URL: ${res.status}`);
   }
   const html = await res.text();
+  const $ = cheerio.load(html);
 
-  // Truncate to avoid token limits — poem content is usually near the top
-  const truncated = html.slice(0, 30000);
+  // Remove script/style tags
+  $("script, style, nav, footer, header").remove();
 
-  return formatAsPoem(
-    `Extract the poem from this webpage HTML. The poem text is in the page content — find it and return all lines.\n\n${truncated}`
-  );
+  let title = "";
+  let author = "";
+  let lines = [];
+
+  if (url.includes("poetryfoundation.org")) {
+    title = $("h1").first().text().trim();
+    // Author is typically in a span or link near the title
+    author =
+      $(".c-feature-hd a").first().text().trim() ||
+      $("span.c-txt_attribution a").first().text().trim() ||
+      $("[class*='author'] a").first().text().trim() ||
+      $("h1").next().find("a").first().text().trim();
+    // Poem body — Poetry Foundation uses a div with the poem text
+    const poemDiv =
+      $("[class*='poem'] div").first() ||
+      $(".o-poem").first() ||
+      $("div.c-feature-bd").first();
+    const poemHtml = poemDiv.html() || "";
+    lines = poemHtml
+      .split(/<br\s*\/?>|\n/)
+      .map((l) => cheerio.load(l).text().trim());
+  } else if (url.includes("allpoetry.com")) {
+    title = $("h1").first().text().trim();
+    author = $(".bio a.u-underline").first().text().trim() ||
+      $("a[href*='/']").filter((_, el) => $(el).closest(".bio").length).first().text().trim();
+    const poemDiv = $(".poem_body div[itemprop='text']").first() ||
+      $(".poem_body .contentdata").first() ||
+      $(".poem_body").first();
+    const poemHtml = poemDiv.html() || "";
+    lines = poemHtml
+      .split(/<br\s*\/?>|\n/)
+      .map((l) => cheerio.load(l).text().trim());
+  } else {
+    // Generic fallback: extract all text and let Claude structure it
+    const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 15000);
+    return formatAsPoem(
+      `Extract the poem from this page content:\n\n${bodyText}`
+    );
+  }
+
+  // Clean up lines: collapse runs of empty strings into single stanza breaks
+  const cleaned = [];
+  let lastWasEmpty = false;
+  for (const line of lines) {
+    if (line === "") {
+      if (!lastWasEmpty && cleaned.length > 0) {
+        cleaned.push("");
+        lastWasEmpty = true;
+      }
+    } else {
+      cleaned.push(line);
+      lastWasEmpty = false;
+    }
+  }
+  // Remove trailing empty line
+  if (cleaned.length > 0 && cleaned[cleaned.length - 1] === "") {
+    cleaned.pop();
+  }
+
+  if (cleaned.length === 0) {
+    throw new Error("Could not extract poem lines from page");
+  }
+
+  return { title, author, lines: cleaned };
 }
 
-// Use Claude to format text into structured poem JSON
+// Use Claude to format text into structured poem JSON (fallback)
 async function formatAsPoem(content) {
   const formatResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
