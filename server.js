@@ -125,11 +125,14 @@ async function formatAsPoem(content) {
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
     system:
-      "You extract poems from provided content and output valid JSON only. No commentary, no markdown. Output the poem exactly as it appears in the source material.",
+      "You extract poems from provided content and output valid JSON only. No commentary, no markdown.",
     messages: [
       {
         role: "user",
-        content: `${content}\n\nOutput the poem as a JSON object with keys "title" (string), "author" (string), and "lines" (array of strings, one per line, use "" for stanza breaks). Output ONLY the JSON.`,
+        content: `${content}\n\nIf the full poem text is present, output it as a JSON object: {"title":"...","author":"...","lines":["line 1","line 2",...]}
+Use "" for stanza breaks.
+If you cannot provide the poem (e.g. copyright concerns, poem not found, or the content doesn't contain the full text), output: {"error":"brief reason why"}
+Output ONLY the JSON.`,
       },
       {
         role: "assistant",
@@ -163,6 +166,10 @@ app.post("/api/fetch-poem", async (req, res) => {
 
     console.log("Parsed poem:", JSON.stringify(poem, null, 2));
 
+    if (poem.error) {
+      throw new Error(poem.error);
+    }
+
     if (!poem.title || !poem.author || !Array.isArray(poem.lines)) {
       console.error("Invalid structure. Keys found:", Object.keys(poem));
       throw new Error("Invalid poem structure");
@@ -171,9 +178,7 @@ app.post("/api/fetch-poem", async (req, res) => {
     res.json(poem);
   } catch (err) {
     console.error("Error fetching poem:", err);
-    const message = err.message.includes("Poetry Foundation")
-      ? err.message
-      : "Failed to fetch poem. Please try again.";
+    const message = err.message || "Failed to fetch poem. Please try again.";
     res.status(500).json({ error: message });
   }
 });
