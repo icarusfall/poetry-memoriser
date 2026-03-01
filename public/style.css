@@ -116,6 +116,27 @@ h2 {
   box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
 }
 
+.form-divider {
+  text-align: center;
+  color: #999;
+  font-size: 0.85rem;
+  margin: 4px 0 10px;
+  position: relative;
+}
+
+.form-divider::before,
+.form-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background: #ddd;
+}
+
+.form-divider::before { left: 0; }
+.form-divider::after { right: 0; }
+
 .form-actions {
   display: flex;
   gap: 10px;

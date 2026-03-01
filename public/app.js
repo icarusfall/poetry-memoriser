@@ -20,6 +20,7 @@ const addPoemForm = document.getElementById("add-poem-form");
 const cancelAddBtn = document.getElementById("cancel-add-btn");
 const titleInput = document.getElementById("poem-title-input");
 const authorInput = document.getElementById("poem-author-input");
+const urlInput = document.getElementById("poem-url-input");
 const fetchBtn = document.getElementById("fetch-btn");
 const fetchStatus = document.getElementById("fetch-status");
 const poemList = document.getElementById("poem-list");
@@ -139,8 +140,14 @@ addPoemForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = titleInput.value.trim();
   const author = authorInput.value.trim();
+  const url = urlInput.value.trim();
 
-  if (!title) return;
+  if (!title && !url) {
+    fetchStatus.textContent = "Enter a poem title or paste a URL";
+    fetchStatus.className = "error";
+    fetchStatus.classList.remove("hidden");
+    return;
+  }
 
   fetchBtn.disabled = true;
   fetchStatus.textContent = "Fetching poem...";
@@ -151,7 +158,7 @@ addPoemForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/fetch-poem", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, author: author || undefined }),
+      body: JSON.stringify({ title: title || undefined, author: author || undefined, url: url || undefined }),
     });
 
     if (!res.ok) {

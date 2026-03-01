@@ -10,8 +10,8 @@ app.use(express.static("public"));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-async function fetchPoem(title, authorHint) {
-  // Step 1: Search the web for the full poem text
+// Fetch poem by title using web search (works for public domain poems)
+async function fetchPoemByTitle(title, authorHint) {
   const searchResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 4096,
@@ -24,7 +24,6 @@ async function fetchPoem(title, authorHint) {
     ],
   });
 
-  // Collect the text blocks from the search response
   const searchText = searchResponse.content
     .filter((b) => b.type === "text")
     .map((b) => b.text)
@@ -37,15 +36,36 @@ async function fetchPoem(title, authorHint) {
     throw new Error("Web search returned no text content");
   }
 
-  // Step 2: Format the found poem as JSON
+  return formatAsPoem(searchText);
+}
+
+// Fetch poem from a URL (works for any poem, including copyrighted)
+async function fetchPoemByUrl(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch URL: ${res.status}`);
+  }
+  const html = await res.text();
+
+  // Truncate to avoid token limits — poem content is usually near the top
+  const truncated = html.slice(0, 30000);
+
+  return formatAsPoem(
+    `Extract the poem from this webpage HTML. The poem text is in the page content — find it and return all lines.\n\n${truncated}`
+  );
+}
+
+// Use Claude to format text into structured poem JSON
+async function formatAsPoem(content) {
   const formatResponse = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
-    system: "You output valid JSON and nothing else. No commentary, no markdown.",
+    system:
+      "You extract poems from provided content and output valid JSON only. No commentary, no markdown. Output the poem exactly as it appears in the source material.",
     messages: [
       {
         role: "user",
-        content: `Here is information about a poem:\n\n${searchText}\n\nOutput the full text of this poem as a JSON object with keys "title" (string), "author" (string), and "lines" (array of strings, one per line, use "" for stanza breaks).`,
+        content: `${content}\n\nOutput the poem as a JSON object with keys "title" (string), "author" (string), and "lines" (array of strings, one per line, use "" for stanza breaks). Output ONLY the JSON.`,
       },
       {
         role: "assistant",
@@ -60,16 +80,23 @@ async function fetchPoem(title, authorHint) {
 }
 
 app.post("/api/fetch-poem", async (req, res) => {
-  const { title, author } = req.body;
+  const { title, author, url } = req.body;
 
-  if (!title) {
-    return res.status(400).json({ error: "Title is required" });
+  if (!title && !url) {
+    return res.status(400).json({ error: "Title or URL is required" });
   }
 
-  const authorHint = author ? ` by ${author}` : "";
-
   try {
-    const poem = await fetchPoem(title, authorHint);
+    let poem;
+    if (url) {
+      console.log("Fetching poem from URL:", url);
+      poem = await fetchPoemByUrl(url);
+    } else {
+      const authorHint = author ? ` by ${author}` : "";
+      console.log("Searching for poem:", title, authorHint);
+      poem = await fetchPoemByTitle(title, authorHint);
+    }
+
     console.log("Parsed poem:", JSON.stringify(poem, null, 2));
 
     if (!poem.title || !poem.author || !Array.isArray(poem.lines)) {

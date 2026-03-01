@@ -18,8 +18,10 @@
         <button id="add-poem-btn" class="btn btn-primary">+ Add Poem</button>
 
         <form id="add-poem-form" class="hidden">
-          <input type="text" id="poem-title-input" placeholder="Poem title (e.g. Ozymandias)" required>
+          <input type="text" id="poem-title-input" placeholder="Poem title (e.g. Ozymandias)">
           <input type="text" id="poem-author-input" placeholder="Author (optional)">
+          <div class="form-divider">or paste a link</div>
+          <input type="url" id="poem-url-input" placeholder="Poetry Foundation URL">
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" id="fetch-btn">Fetch Poem</button>
             <button type="button" class="btn btn-secondary" id="cancel-add-btn">Cancel</button>
