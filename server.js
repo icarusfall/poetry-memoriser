@@ -45,6 +45,12 @@ async function fetchPoemByTitle(title, authorHint) {
 
 // Fetch poem from a URL by scraping the page directly
 async function fetchPoemByUrl(url) {
+  if (url.includes("poetryfoundation.org")) {
+    throw new Error(
+      "Poetry Foundation blocks automated access. Please use an AllPoetry link instead, or search by title."
+    );
+  }
+
   const res = await fetch(url, {
     headers: { "User-Agent": BROWSER_UA },
   });
@@ -54,43 +60,34 @@ async function fetchPoemByUrl(url) {
   const html = await res.text();
   const $ = cheerio.load(html);
 
-  // Remove script/style tags
+  // Remove noise
   $("script, style, nav, footer, header").remove();
 
   let title = "";
   let author = "";
   let lines = [];
 
-  if (url.includes("poetryfoundation.org")) {
+  if (url.includes("allpoetry.com")) {
     title = $("h1").first().text().trim();
-    // Author is typically in a span or link near the title
+    // Author name is in the main_poem section before the h1
     author =
-      $(".c-feature-hd a").first().text().trim() ||
-      $("span.c-txt_attribution a").first().text().trim() ||
-      $("[class*='author'] a").first().text().trim() ||
-      $("h1").next().find("a").first().text().trim();
-    // Poem body — Poetry Foundation uses a div with the poem text
-    const poemDiv =
-      $("[class*='poem'] div").first() ||
-      $(".o-poem").first() ||
-      $("div.c-feature-bd").first();
-    const poemHtml = poemDiv.html() || "";
+      $(".main_poem a[href^='/']")
+        .filter((_, el) => {
+          const href = $(el).attr("href") || "";
+          // Author links are like /Donald-Marquis (single path segment, no further slashes)
+          return /^\/[A-Z]/.test(href) && !href.includes("/poem");
+        })
+        .first()
+        .text()
+        .trim() || "Unknown";
+    // Poem text is in .poem_body inside a div with class like orig_XXXXX
+    const poemDiv = $(".poem_body [class^='orig_']").first();
+    const poemHtml = poemDiv.html() || $(".poem_body").first().html() || "";
     lines = poemHtml
-      .split(/<br\s*\/?>|\n/)
-      .map((l) => cheerio.load(l).text().trim());
-  } else if (url.includes("allpoetry.com")) {
-    title = $("h1").first().text().trim();
-    author = $(".bio a.u-underline").first().text().trim() ||
-      $("a[href*='/']").filter((_, el) => $(el).closest(".bio").length).first().text().trim();
-    const poemDiv = $(".poem_body div[itemprop='text']").first() ||
-      $(".poem_body .contentdata").first() ||
-      $(".poem_body").first();
-    const poemHtml = poemDiv.html() || "";
-    lines = poemHtml
-      .split(/<br\s*\/?>|\n/)
-      .map((l) => cheerio.load(l).text().trim());
+      .split(/<br\s*\/?>/)
+      .map((l) => cheerio.load(`<span>${l}</span>`).text().trimEnd());
   } else {
-    // Generic fallback: extract all text and let Claude structure it
+    // Generic fallback: extract body text and use Claude to structure it
     const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 15000);
     return formatAsPoem(
       `Extract the poem from this page content:\n\n${bodyText}`
@@ -111,7 +108,6 @@ async function fetchPoemByUrl(url) {
       lastWasEmpty = false;
     }
   }
-  // Remove trailing empty line
   if (cleaned.length > 0 && cleaned[cleaned.length - 1] === "") {
     cleaned.pop();
   }
@@ -175,7 +171,10 @@ app.post("/api/fetch-poem", async (req, res) => {
     res.json(poem);
   } catch (err) {
     console.error("Error fetching poem:", err);
-    res.status(500).json({ error: "Failed to fetch poem. Please try again." });
+    const message = err.message.includes("Poetry Foundation")
+      ? err.message
+      : "Failed to fetch poem. Please try again.";
+    res.status(500).json({ error: message });
   }
 });
 
