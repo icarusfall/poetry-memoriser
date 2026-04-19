@@ -32,6 +32,7 @@ const practiceAuthor = document.getElementById("practice-author");
 const progressBar = document.getElementById("progress-bar");
 const linesContainer = document.getElementById("lines-container");
 const revealBtn = document.getElementById("reveal-btn");
+const quitBtn = document.getElementById("quit-btn");
 const practiceControls = document.getElementById("practice-controls");
 const sessionResult = document.getElementById("session-result");
 const resultScore = document.getElementById("result-score");
@@ -319,6 +320,16 @@ function finishSession(poem) {
 
 backBtn.addEventListener("click", showHome);
 resultBackBtn.addEventListener("click", showHome);
+
+quitBtn.addEventListener("click", () => {
+  const poem = getPoems().find((p) => p.id === currentPoemId);
+  if (!poem) return;
+  const contentLines = poem.lines.filter((l) => l.trim() !== "");
+  for (let i = 0; i < contentLines.length; i++) {
+    if (!(i in scores)) scores[i] = false;
+  }
+  finishSession(poem);
+});
 
 // --- Utilities ---
 function escapeHtml(str) {
